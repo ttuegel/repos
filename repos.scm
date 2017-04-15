@@ -1,47 +1,69 @@
 (import (scheme base))
 (import (scheme process-context))
 
+(import (chibi filesystem))
 (import (chibi io))
 (import (chibi match))
 (import (chibi process))
+(import (chibi string))
 (import (chibi system))
 
-;;;> Returns \scheme{#t} if the current directory is clean.
-(define (git-clean dir)
-  (let ((outp (process->string
-               (list "git" "-C" dir "status" "--porcelain"))))
+;;;> Is the current directory clean? Returns \scheme{#f} if the directory
+;;;> does not contain a Git repository.
+(define (git-clean)
+  (let ((outp (process->string (list "git" "status" "--porcelain"))))
     (eq? 0 (string-length outp))))
 
+;;;> The user's default shell.
+(define shell (user-shell (user-information (current-user-id))))
+
+;;;> Prompt the user to clean up the current directory by displaying
+;;;> \var{message} and dropping them into a shell. If the shell exits
+;;;> abnormally, the current process will also exit abnormally.
 (define (cleanup message)
   (write-string message)
   (newline)
-  (let* ((shell (user-shell (user-information (current-user-id)))))
-    (unless (system? shell) (exit #f))))
+  (unless (system? shell) (exit #f)))
 
 ;;;> Prompt the user to commit any changes in the current directory.
-(define (commit-git dir)
-  (unless (git-clean dir) (cleanup "Please commit your changes")))
+(define (commit-git)
+  (unless (git-clean) (cleanup "# Please commit your changes")))
 
-(define (git-pull dir)
-  (system? (list "git" "-C" dir "pull")))
+(define (display-command-for-user command)
+  (write-string "; ")
+  (write-string (string-join command " "))
+  (newline))
 
-(define (git-submodule-update dir)
-  (system? (list "git" "-C" dir "submodule" "update" "--init")))
+(define (git-pull)
+  (let ((command (list "git" "pull")))
+    (display-command-for-user command)
+    (apply system? command)))
 
-(define (pull-git dir)
-  (unless (and (git-pull dir)
-               (git-submodule-update dir))
-    (cleanup "pull-git failed")))
+(define (git-submodule-update)
+  (let ((command (list "git" "submodule" "update" "--init")))
+    (display-command-for-user command)
+    (apply system? command)))
 
-(define (git-push dir)
-  (system? (list "git" "-C" dir "push" "--porcelain")))
+;;;> Pull in remote changes to the current directory.
+(define (pull-git)
+  (unless (and (git-pull) (git-submodule-update))
+    (cleanup "# Please pull in remote changes")))
 
-(define (push-git dir)
-  (unless (git-push dir) (cleanup "push-git failed")))
+(define (git-push)
+  (let ((command (list "git" "push" "--porcelain")))
+    (display-command-for-user command)
+    (apply system? command)))
 
+;;;> Push local changes from the current directory.
+(define (push-git)
+  (unless (git-push) (cleanup "# Please push local changes")))
+
+;;;> Synchronize the Git repository in \var{dir}.
 (define (sync-git dir)
-  (commit-git dir)
-  (pull-git dir)
-  (push-git dir))
+  (with-directory dir
+    (lambda ()
+      (commit-git)
+      (pull-git)
+      (push-git))))
 
 (sync-git "/home/ttuegel/.emacs.d/")
