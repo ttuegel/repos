@@ -66,4 +66,11 @@
       (pull-git)
       (push-git))))
 
-(sync-git "/home/ttuegel/.emacs.d/")
+;;;> Clone the Git repository at \var{repo} into \var{dir}.
+(define (clone-git repo dir)
+  (unless (create-directory* dir)
+    (die "# Unable to create directory `" dir "'!"))
+  (unless (git-clone repo dir) (die "# Clone failed!"))
+  (unless (with-directory dir (git-submodule-update))
+    (die "# Failed to fetch submodules!")))
+
