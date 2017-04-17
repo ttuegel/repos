@@ -1,5 +1,6 @@
 (import (scheme base))
 (import (scheme process-context))
+(import (scheme write))
 
 (import (chibi filesystem))
 (import (chibi io))
@@ -74,3 +75,34 @@
   (unless (with-directory dir (git-submodule-update))
     (die "# Failed to fetch submodules!")))
 
+(define-values (action targets)
+  (match (command-line)
+    ((_ action . targets) (values (string->symbol action) targets))
+    ((_) (values 'sync '()))))
+
+(define (die . messages)
+  (write-string (string-join messages))
+  (newline)
+  (exit #f))
+
+(case action
+  (('clone)
+   (unless (> 0 (length targets))
+     (die "# Action `clone' requires at least one target")))
+  (('sync) '())
+  (else (die "# Unknown action `" (symbol->string action) "'")))
+
+(define (git repo dir)
+  (case action
+    (('clone) (clone-git repo dir))
+    (('sync) (sync-git dir))
+    (else '())))
+
+(define config-file
+  (let ((home (user-home (user-information (current-user-id)))))
+    (make-path home ".config" "repos.scm")))
+
+(unless (file-is-readable? config-file)
+  (die "# Config file is not readable!"))
+
+(load config-file)
