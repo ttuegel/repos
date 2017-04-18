@@ -74,6 +74,11 @@
 (define (sync-git dir)
   (with-directory-or-skip dir (lambda () (commit-git) (pull-git) (push-git))))
 
+(define (git-clone repo dir)
+  (let ((command (list "git" "clone" repo dir)))
+    (display-command-for-user command)
+    (apply system? command)))
+
 ;;;> Clone the Git repository at \var{repo} into \var{dir}.
 (define (clone-git repo dir)
   (unless (create-directory* dir)
