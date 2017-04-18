@@ -1,10 +1,12 @@
 (import (scheme base))
+(import (scheme load))
 (import (scheme process-context))
 (import (scheme write))
 
 (import (chibi filesystem))
 (import (chibi io))
 (import (chibi match))
+(import (chibi pathname))
 (import (chibi process))
 (import (chibi string))
 (import (chibi system))
