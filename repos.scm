@@ -61,13 +61,18 @@
 (define (push-git)
   (unless (git-push) (cleanup "# Please push local changes")))
 
+(define (with-directory-or-skip dir body)
+  (if (file-directory? dir)
+      (begin
+        (display-command-for-user (list "cd" dir))
+        (with-directory dir body))
+      (begin
+        (write-string (string-join "# Skipping missing directory `" dir "'"))
+        (newline))))
+
 ;;;> Synchronize the Git repository in \var{dir}.
 (define (sync-git dir)
-  (with-directory dir
-    (lambda ()
-      (commit-git)
-      (pull-git)
-      (push-git))))
+  (with-directory-or-skip dir (lambda () (commit-git) (pull-git) (push-git))))
 
 ;;;> Clone the Git repository at \var{repo} into \var{dir}.
 (define (clone-git repo dir)
