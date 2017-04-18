@@ -85,18 +85,18 @@
   (newline)
   (exit #f))
 
-(case action
-  (('clone)
-   (unless (> 0 (length targets))
-     (die "# Action `clone' requires at least one target")))
-  (('sync) '())
-  (else (die "# Unknown action `" (symbol->string action) "'")))
+(match action
+ ('clone
+  (unless (> 0 (length targets))
+    (die "# Action `clone' requires at least one target")))
+ ('sync '())
+ (_ (die "# Unknown action `" (symbol->string action) "'")))
 
 (define (git repo dir)
-  (case action
-    (('clone) (clone-git repo dir))
-    (('sync) (sync-git dir))
-    (else '())))
+  (match action
+    ('clone (clone-git repo dir))
+    ('sync (sync-git dir))
+    (_ '())))
 
 (define config-file
   (let ((home (user-home (user-information (current-user-id)))))
