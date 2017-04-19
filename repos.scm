@@ -3,6 +3,8 @@
 (import (scheme process-context))
 (import (scheme write))
 
+(import (srfi 1))
+
 (import (chibi filesystem))
 (import (chibi io))
 (import (chibi match))
@@ -104,11 +106,16 @@
  ('sync '())
  (_ (die "# Unknown action `" (symbol->string action) "'")))
 
+(define (is-target? dir)
+  (or (eq? targets '())
+      (member dir targets string=?)))
+
 (define (git repo dir)
-  (match action
-    ('clone (clone-git repo dir))
-    ('sync (sync-git dir))
-    (_ '())))
+  (when (is-target? dir)
+    (match action
+      ('clone (clone-git repo dir))
+      ('sync (sync-git dir))
+      (_ '()))))
 
 (define config-file
   (let ((home (user-home (user-information (current-user-id)))))
