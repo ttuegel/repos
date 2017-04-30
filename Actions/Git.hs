@@ -49,16 +49,15 @@ skipIfExists path go = do
   exists <- testdir path
   if exists then skip path "path exists" else go
 
+announce :: MonadIO io => FilePath -> Maybe Text -> io ()
+announce path message = do
+  let m pref = makeFormat (maybe "" ((<>) pref))
+  printf ("# "%fp%(m ": ")) path message
+
 skip :: MonadIO io => FilePath -> Text -> io ()
-skip path reason = do
-  name <- case toText path of
-    Left name -> do
-      traverse_ err
-        (textToLines
-         (format ("# WARNING: decoding error in path '"%s%"'") name))
-      pure name
-    Right name -> pure name
-  printf ("# Skipping '"%s%"': "%s) name reason
+skip path reason =
+  let message = format ("skipped ("%s%")") reason
+  in announce path (Just message)
 
 status, pull, push :: MonadIO io => io ExitCode
 status = gitStatus .||. cleanup "Please commit your changes"
@@ -72,6 +71,7 @@ sync1 path _ targets
       runManaged $ do
         home >>= pushd
         skipIfMissing path $ do
+          announce path Nothing
           pushd path
           _ <- status .&&. pull .&&. push
           pure ()
