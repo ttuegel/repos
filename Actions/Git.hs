@@ -52,7 +52,7 @@ skipIfExists path go = do
 announce :: MonadIO io => FilePath -> Maybe Text -> io ()
 announce path message = do
   let m pref = makeFormat (maybe "" ((<>) pref))
-  printf ("# "%fp%(m ": ")) path message
+  printf ("# "%fp%(m ": ")%"\n") path message
 
 skip :: MonadIO io => FilePath -> Text -> io ()
 skip path reason =
