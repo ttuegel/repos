@@ -15,6 +15,7 @@ executables:
     other-modules:
       - Actions
       - Actions.Git
+      - Actions.Helpers
       - Actions.Types
       - Config
       - Posix
