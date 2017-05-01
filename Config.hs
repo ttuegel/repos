@@ -15,7 +15,7 @@ import Turtle.Prelude
 data Repo = Git { name :: FilePath
                 , url :: FilePath
                 }
-          | Pass
+          | Pass { url :: FilePath }
   deriving (Generic)
 
 instance Interpret FilePath where

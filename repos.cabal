@@ -20,6 +20,8 @@ executable repos
   other-modules:
       Actions
       Actions.Git
+      Actions.Helpers
+      Actions.Pass
       Actions.Types
       Config
       Posix

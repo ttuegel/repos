@@ -16,6 +16,7 @@ executables:
       - Actions
       - Actions.Git
       - Actions.Helpers
+      - Actions.Pass
       - Actions.Types
       - Config
       - Posix
