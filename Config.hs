@@ -12,10 +12,9 @@ import Filesystem.Path.CurrentOS
 import Prelude hiding (FilePath)
 import Turtle.Prelude
 
-data Repo = Git { name :: FilePath
-                , url :: FilePath
-                }
+data Repo = Git { name :: FilePath, url :: FilePath }
           | Pass { url :: FilePath }
+          | Vcsh { name :: FilePath, url :: FilePath }
   deriving (Generic)
 
 instance Interpret FilePath where

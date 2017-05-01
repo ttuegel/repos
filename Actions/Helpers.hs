@@ -4,6 +4,7 @@ module Actions.Helpers where
 
 import qualified Data.Text as T
 import Data.Foldable (traverse_)
+import Filesystem.Path.CurrentOS hiding (empty, null)
 import Prelude hiding (FilePath)
 import Turtle hiding (skip)
 
@@ -39,3 +40,6 @@ skip :: MonadIO io => FilePath -> Text -> io ()
 skip path reason =
   let message = format ("skipped ("%s%")") reason
   in announce path (Just message)
+
+filePathArg :: FilePath -> Text
+filePathArg = T.pack . encodeString

@@ -49,9 +49,6 @@ sync1 path _ targets
 
   | otherwise = pure ()
 
-filePathArg :: FilePath -> Text
-filePathArg = T.pack . encodeString
-
 gitClone :: MonadIO io => FilePath -> FilePath -> io ExitCode
 gitClone path url =
   proc "git" ["clone", filePathArg url, filePathArg path] empty

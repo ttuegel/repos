@@ -23,6 +23,7 @@ executable repos
       Actions.Helpers
       Actions.Pass
       Actions.Types
+      Actions.Vcsh
       Config
       Posix
   default-language: Haskell2010

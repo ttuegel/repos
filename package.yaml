@@ -18,5 +18,6 @@ executables:
       - Actions.Helpers
       - Actions.Pass
       - Actions.Types
+      - Actions.Vcsh
       - Config
       - Posix
