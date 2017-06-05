@@ -3,27 +3,15 @@
 let
 
   inherit (nixpkgs) pkgs;
-
-  f = { mkDerivation, base, dhall, optparse-applicative, stdenv
-      , system-filepath, text, turtle, unix
-      }:
-      mkDerivation {
-        pname = "repos";
-        version = "0.0.0";
-        src = ./.;
-        isLibrary = false;
-        isExecutable = true;
-        executableHaskellDepends = [
-          base dhall optparse-applicative system-filepath text turtle unix
-        ];
-        license = stdenv.lib.licenses.unfree;
-      };
+  inherit (pkgs.haskell.lib) dontCheck;
 
   haskellPackages = if compiler == "default"
                        then pkgs.haskellPackages
                        else pkgs.haskell.packages.${compiler};
 
-  drv = haskellPackages.callPackage f {};
+  drv = haskellPackages.callPackage ./repos.nix {
+    yaml = dontCheck haskellPackages.yaml_0_8_23;
+  };
 
 in
 
