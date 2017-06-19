@@ -23,7 +23,7 @@ gitStatus = do
 
 gitPull :: MonadIO io => io ExitCode
 gitPull =
-  proc_ "git" ["pull"] empty
+  proc_ "git" ["pull", "--no-gpg-sign"] empty
   .&&.
   proc_ "git" ["submodule", "update", "--init"] empty
 
