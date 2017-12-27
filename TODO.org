@@ -4,3 +4,7 @@
 * TODO Use a hierarchy of configuration files
 
 Instead of a single configuration at $HOME/.config/repos.yaml, support a hierarchy of configuration files at ./.repos.yml.
+
+* TODO Use Dhall as a configuration format
+
+Preferably, support YAML and Dhall, so that this project may serve as a gateway drug to Dhall for others.
