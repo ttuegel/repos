@@ -1,0 +1,6 @@
+
+* TODO Rename configuration file to repos.yml
+
+* TODO Use a hierarchy of configuration files
+
+Instead of a single configuration at $HOME/.config/repos.yaml, support a hierarchy of configuration files at ./.repos.yml.
