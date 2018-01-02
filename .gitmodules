@@ -1,6 +1,3 @@
 [submodule "nixpkgs"]
 	path = nixpkgs
 	url = https://github.com/NixOS/nixpkgs-channels
-[submodule "nix-dir-locals"]
-	path = nix-dir-locals
-	url = https://github.com/ttuegel/nix-dir-locals.git
