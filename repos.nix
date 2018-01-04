@@ -1,5 +1,6 @@
-{ mkDerivation, base, optparse-applicative, stdenv, system-filepath
-, text, turtle, unix, vector, yaml
+{ mkDerivation, base, bytestring, containers, dhall
+, optparse-applicative, stdenv, system-filepath, text, text-format
+, trifecta, turtle, unix, vector
 }:
 mkDerivation {
   pname = "repos";
@@ -8,8 +9,8 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base optparse-applicative system-filepath text turtle unix vector
-    yaml
+    base bytestring containers dhall optparse-applicative
+    system-filepath text text-format trifecta turtle unix vector
   ];
   license = stdenv.lib.licenses.unfree;
 }
