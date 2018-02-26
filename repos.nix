@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "repos";
-  version = "0.0.0";
+  version = "0.1";
   src = ./.;
   isLibrary = false;
   isExecutable = true;
@@ -13,4 +13,5 @@ mkDerivation {
     system-filepath text text-format trifecta turtle unix vector
   ];
   license = stdenv.lib.licenses.unfree;
+  hydraPlatforms = stdenv.lib.platforms.none;
 }
