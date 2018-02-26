@@ -2,16 +2,18 @@
 
 module Actions.Vcsh where
 
+import Data.Foldable (traverse_)
 import Prelude hiding (FilePath)
 import Turtle
 
-import Actions.Helpers
+import Actions.Helpers hiding (cleanup)
 import Actions.Types
+import Posix (forkAndWait)
 
 status, pull, push :: MonadIO io => FilePath -> io ExitCode
-status name = vcshStatus name .||. cleanup "Please commit your changes"
-pull name = vcshPull name .||. cleanup "Please pull remote changes"
-push name = vcshPush name .||. cleanup "Please push local changes"
+status name = vcshStatus name .||. cleanup name "Please commit your changes"
+pull name = vcshPull name .||. cleanup name "Please pull remote changes"
+push name = vcshPush name .||. cleanup name "Please push local changes"
 
 vcshStatus :: MonadIO io => FilePath -> io ExitCode
 vcshStatus name = do
@@ -57,3 +59,7 @@ clone1 name url targets
   where
     path = ".config/vcsh/repo.d" </> name <.> "git"
 
+cleanup :: MonadIO io => FilePath -> Text -> io ExitCode
+cleanup name reason = do
+  traverse_ echo (textToLines (format ("# "%s) reason))
+  forkAndWait "vcsh" [filePathArg name]

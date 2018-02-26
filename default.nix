@@ -1,42 +1,69 @@
-{ nixpkgs ? import ./nixpkgs {}, compiler ? "default" }:
+let
+
+  nixpkgs =
+    let
+      inherit ((import <nixpkgs> {}).pkgs) fetchFromGitHub lib;
+      lock = builtins.fromJSON (builtins.readFile ./nixpkgs.lock.json);
+      bootstrap =
+        fetchFromGitHub {
+          owner = "NixOS";
+          repo = "nixpkgs-channels";
+          inherit (lock) rev sha256;
+        };
+      defaultOverrides =
+        let file = ./default.overrides.nix; in
+        lib.optional
+        (lib.inNixShell && builtins.pathExists file)
+        (import file);
+      shellOverrides =
+        let file = ./shell.overrides.nix; in
+        lib.optional
+        (lib.inNixShell && builtins.pathExists file)
+        (import file);
+      userShellOverrides =
+        let
+          file =
+            builtins.getEnv "HOME" + "/.config/nixpkgs/shell.overrides.nix";
+        in
+          lib.optional
+          (lib.inNixShell && builtins.pathExists file)
+          (import file);
+    in
+      import bootstrap
+      {
+        config.allowUnfree = true;
+        overlays = defaultOverrides ++ shellOverrides ++ userShellOverrides;
+      };
+
+in
 
 let
 
   inherit (nixpkgs) pkgs;
+  inherit (pkgs) haskellPackages lib;
 
-  haskellPackages = if compiler == "default"
-                       then pkgs.haskellPackages
-                       else pkgs.haskell.packages.${compiler};
-  filterSource =
+
+  blacklistDirs = [ ".git" "dist" "dist-newstyle" ];
+  whitelistExts = [ ".cabal" ".hs" ];
+  whitelistNames = [ "LICENSE" ];
+
+  filterSrc =
     let
-      inherit (pkgs.haskell.lib) overrideCabal;
       overrideSrc = drv: f:
+        let inherit (pkgs.haskell.lib) overrideCabal; in
         overrideCabal drv (args: args // { src = f args.src; });
-    in
-      drv: pred: overrideSrc drv (src: builtins.filterSource pred src);
-
-  omitDirs =
-    let
-      blacklistDirs = [ ".git" "dist" "nixpkgs" ];
-      whitelistExts = [ ".cabal" ".hs" ];
-      whitelistNames = [ "LICENSE" ];
-
       predicate = path: type:
-        let inherit (nixpkgs.lib) any elem hasSuffix; in
+        let inherit (lib) any elem hasSuffix; in
         let baseName = baseNameOf path; in
         if type == "directory"
           then !(elem baseName blacklistDirs)
           else any (suf: hasSuffix suf baseName) whitelistExts
             || any (name: baseName == name) whitelistNames;
     in
-      drv: filterSource drv predicate;
+      drv: overrideSrc drv (src: builtins.filterSource predicate src);
 
-  drv = omitDirs (haskellPackages.callPackage ./repos.nix {
-    yaml =
-      let inherit (pkgs.haskell.lib) dontCheck; in
-      dontCheck haskellPackages.yaml_0_8_23_1;
-  });
+  drv = filterSrc (haskellPackages.callPackage ./repos.nix {});
 
 in
 
-  if pkgs.lib.inNixShell then drv.env else drv
+  if lib.inNixShell then drv.env else drv

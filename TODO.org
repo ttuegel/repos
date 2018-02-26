@@ -1,0 +1,14 @@
+
+* TODO Rename configuration file to repos.yml
+
+* TODO Use a hierarchy of configuration files
+
+Instead of a single configuration at $HOME/.config/repos.yaml, support a hierarchy of configuration files at ./.repos.yml.
+
+* TODO Use Dhall as a configuration format
+
+Preferably, support YAML and Dhall, so that this project may serve as a gateway drug to Dhall for others.
+
+* TODO Synchronize repositories concurrently
+
+Synchronization can run concurrently by running the phases in sequence (clean, pull, push) where each phase operates on all repositories at once. The concurrent approach has the added advantage that it pushes all human interaction to the front of the process.
