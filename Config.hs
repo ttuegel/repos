@@ -10,7 +10,7 @@ module Config where
 import Control.Applicative
 import qualified Control.Exception
 import qualified Data.ByteString.Lazy
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict.InsOrd as Map
 import Data.Text.Buildable (Buildable(..))
 import qualified Data.Text.Encoding
 import qualified Data.Text.Lazy

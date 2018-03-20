@@ -15,7 +15,8 @@ executable repos
       base >=4.7 && <5
     , bytestring >=0.10
     , containers >=0.5.10
-    , dhall >=1.8
+    , dhall >=1.11
+    , insert-ordered-containers >= 0.2
     , optparse-applicative >=0.13
     , system-filepath ==0.4.*
     , text >=1.2
