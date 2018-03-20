@@ -2,14 +2,11 @@ let
 
   nixpkgs =
     let
-      inherit ((import <nixpkgs> {}).pkgs) fetchFromGitHub lib;
+      inherit ((import <nixpkgs> {}).pkgs) fetchgit lib;
       lock = builtins.fromJSON (builtins.readFile ./nixpkgs.lock.json);
-      bootstrap =
-        fetchFromGitHub {
-          owner = "NixOS";
-          repo = "nixpkgs-channels";
-          inherit (lock) rev sha256;
-        };
+      bootstrap = fetchgit {
+        inherit (lock) url rev sha256 fetchSubmodules;
+      };
       defaultOverrides =
         let file = ./default.overrides.nix; in
         lib.optional

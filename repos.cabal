@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aaee372a8b442a3701ea3e5368d6df23fc005225e5b08fd42be2ade50bc7a0b4
+-- hash: d65eb00077f13bc4dd4974427421ee21074da6b62d85cdfda46e2ad92b37656f
 
 name:           repos
-version:        0.1
+version:        0.2
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -15,7 +15,8 @@ executable repos
       base >=4.7 && <5
     , bytestring >=0.10
     , containers >=0.5.10
-    , dhall >=1.8
+    , dhall >=1.11
+    , insert-ordered-containers >=0.2
     , optparse-applicative >=0.13
     , system-filepath ==0.4.*
     , text >=1.2
