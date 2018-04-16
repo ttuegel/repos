@@ -11,7 +11,6 @@ import Control.Applicative
 import qualified Control.Exception
 import qualified Data.ByteString.Lazy
 import qualified Data.HashMap.Strict.InsOrd as Map
-import Data.Text.Buildable (Buildable(..))
 import qualified Data.Text.Encoding
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Encoding
@@ -31,6 +30,7 @@ import Dhall.TypeCheck (X)
 import qualified Dhall.TypeCheck
 import Filesystem.Path.CurrentOS
 import qualified Filesystem.Path.CurrentOS as FilePath
+import Formatting.Buildable (Buildable(..))
 import Prelude hiding (FilePath)
 import Text.Trifecta.Delta (Delta(..))
 import Turtle hiding (Parser, bytes)

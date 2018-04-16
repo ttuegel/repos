@@ -1,8 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.21.2.
+-- This file has been generated from package.yaml by hpack version 0.27.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 21a0ef8757e91d8c0fe25661422db887c92a2d5f1d5361ec2bc0dd445c4aab1f
+-- hash: 48256c5d5c5cd92bec4643c7f028e650967ecb9ea3652a055baf2f0ca89673e7
 
 name:           repos
 version:        0.0.0
@@ -15,8 +15,9 @@ executable repos
       base >=4.7 && <5
     , bytestring >=0.10
     , containers >=0.5.10
-    , dhall >=1.11
-    , insert-ordered-containers >= 0.2
+    , dhall >=1.12
+    , formatting
+    , insert-ordered-containers >=0.1
     , optparse-applicative >=0.13
     , system-filepath ==0.4.*
     , text >=1.2

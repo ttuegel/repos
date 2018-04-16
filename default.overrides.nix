@@ -6,7 +6,7 @@ self: super:
         super = (args.overrides or (self: super: super)) self super_;
       in
         super // {
-          ghcWithPackages = self.ghcWithHoogle;
+          dhall = self.callPackage ./dhall.nix {};
         };
   });
 }
