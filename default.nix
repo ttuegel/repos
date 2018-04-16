@@ -10,7 +10,7 @@ let
       defaultOverrides =
         let file = ./default.overrides.nix; in
         lib.optional
-        (lib.inNixShell && builtins.pathExists file)
+        (builtins.pathExists file)
         (import file);
       shellOverrides =
         let file = ./shell.overrides.nix; in
