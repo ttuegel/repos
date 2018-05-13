@@ -2,44 +2,91 @@
 
 module Actions.Helpers where
 
-import qualified Data.Text as T
-import Data.Foldable (traverse_)
-import Filesystem.Path.CurrentOS hiding (empty, null)
-import Prelude hiding (FilePath)
-import Turtle hiding (skip)
+import Control.Applicative
+import Control.Concurrent.Async (Async)
+import qualified Control.Concurrent.Async as Async
+import Control.Foldl (Fold)
+import qualified Control.Foldl as Foldl
+import Control.Monad.IO.Class
+import qualified Control.Monad.State.Strict as State
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+import Data.Text (Text)
+import Formatting
+import qualified Lens.Micro.Platform as Lens
+import qualified Pipes
+import Pipes.Concurrent (Input)
+import qualified Pipes.Concurrent as Pipes
+import qualified Pipes.Parse as Pipes
+import qualified Pipes.Text.Encoding as Pipes.Text
+import System.Directory
+import System.Exit (ExitCode(..))
+import System.IO (stderr)
+import System.Process (showCommandForUser)
 
-import Posix
+import Actions.Action
+import Actions.Command
 
-proc_ :: MonadIO io => Text -> [Text] -> Shell Line -> io ExitCode
-proc_ cmd args inp = do
-  printf ("; "%s%" "%s%"\n") cmd (T.intercalate " " args)
-  proc cmd args inp
+unrecoverable
+  :: Text -> Command -> Input ByteString -> Async ExitCode -> Maybe r -> Action r
+unrecoverable suggest cmd err aexit r =
+  ReaderT $ \_ -> MaybeT $ do
+    exit <- Async.wait aexit
+    case exit of
+      ExitSuccess -> return r
+      ExitFailure e ->
+        do
+          dumpErrors err
+          commandFailed cmd e
+          hprint stderr (stext%"\n") suggest
+          return Nothing
 
-cleanup :: MonadIO io => Text -> io ExitCode
-cleanup reason = do
-  traverse_ echo (textToLines (format ("# "%s) reason))
-  userShell <- getUserShell
-  forkAndWait userShell []
+commandFailed :: Command -> Int -> IO ()
+commandFailed cmd e =
+  do
+    let
+      command = showCommandForUser (name cmd) (arguments cmd)
+      message = "command `"%string%"' failed with exit code "%int%"\n"
+    hprint stderr message command e
 
-skipIfMissing :: MonadIO io => FilePath -> io () -> io ()
-skipIfMissing path go = do
-  exists <- testdir path
-  if exists then go else skip path "does not exist"
+dumpErrors :: Input ByteString -> IO ()
+dumpErrors err =
+  do
+    let
+      producer = Pipes.fromInput err
+      consumer = liftIO . ByteString.hPutStr stderr
+    Pipes.runEffect $ Pipes.for producer consumer
 
-skipIfExists :: MonadIO io => FilePath -> io () -> io ()
-skipIfExists path go = do
-  exists <- testdir path
-  if exists then skip path "path exists" else go
+skipIfMissing :: FilePath -> Action ()
+skipIfMissing path = do
+  exists <- liftIO $ doesDirectoryExist path
+  if exists
+    then
+      do
+        debug ("`"%string%"' is missing; skipping") path
+        empty
+    else return ()
 
-announce :: MonadIO io => FilePath -> Maybe Text -> io ()
-announce path message = do
-  let m pref = makeFormat (maybe "" ((<>) pref))
-  printf ("# "%fp%(m ": ")%"\n") path message
+skipIfExists :: FilePath -> Action ()
+skipIfExists path = do
+  exists <- liftIO $ doesDirectoryExist path
+  if exists
+    then return ()
+    else
+      do
+        debug ("`"%string%"' exists; skipping") path
+        empty
 
-skip :: MonadIO io => FilePath -> Text -> io ()
-skip path reason =
-  let message = format ("skipped ("%s%")") reason
-  in announce path (Just message)
+dropOutput :: Input ByteString -> Action ()
+dropOutput _ = return ()
 
-filePathArg :: FilePath -> Text
-filePathArg = T.pack . encodeString
+countLines :: Input ByteString -> Action Int
+countLines out =
+  do
+    let
+      counter = Foldl.purely Pipes.foldAll count
+      parser = Lens.zoom Pipes.Text.utf8 counter
+    Pipes.liftIO $ State.evalStateT parser (Pipes.fromInput out)
+  where
+    count :: Fold a Int
+    count = Foldl.Fold (\i _ -> i + 1) 0 id

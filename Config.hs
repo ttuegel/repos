@@ -7,17 +7,18 @@
 
 module Config where
 
-import Control.Applicative
 import qualified Control.Exception
 import qualified Data.ByteString.Lazy
 import qualified Data.HashMap.Strict.InsOrd as Map
+import qualified Data.Text
 import qualified Data.Text.Encoding
 import qualified Data.Text.Lazy
-import qualified Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy.Builder
+import qualified Data.Text.Lazy.Encoding
+import qualified Data.Text.Lazy.IO as Data.Text.Lazy
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
-import Dhall (Type(..))
+import Dhall (Text, Type(..))
 import qualified Dhall
 import Dhall.Context (Context)
 import qualified Dhall.Context
@@ -28,12 +29,10 @@ import Dhall.Parser (Src(..))
 import qualified Dhall.Parser
 import Dhall.TypeCheck (X)
 import qualified Dhall.TypeCheck
-import Filesystem.Path.CurrentOS
-import qualified Filesystem.Path.CurrentOS as FilePath
 import Formatting.Buildable (Buildable(..))
-import Prelude hiding (FilePath)
+import Data.Semigroup ((<>))
+import System.Directory (doesFileExist, makeAbsolute)
 import Text.Trifecta.Delta (Delta(..))
-import Turtle hiding (Parser, bytes)
 
 
 data Repo = Git { name :: FilePath, url :: FilePath }
@@ -42,7 +41,7 @@ data Repo = Git { name :: FilePath, url :: FilePath }
 
 
 asText :: Expr Src X -> Maybe Text
-asText = Dhall.extract Dhall.strictText
+asText = Dhall.extract Dhall.lazyText
 
 
 git :: Type Repo
@@ -54,8 +53,8 @@ git =
         \case
           RecordLit fields ->
             do
-              name <- FilePath.fromText <$> (Map.lookup "name" fields >>= asText)
-              url <- FilePath.fromText <$> (Map.lookup "url" fields >>= asText)
+              name <- Data.Text.Lazy.unpack <$> (Map.lookup "name" fields >>= asText)
+              url <- Data.Text.Lazy.unpack <$> (Map.lookup "url" fields >>= asText)
               pure Git {..}
           _ -> Nothing
 
@@ -77,7 +76,7 @@ pass =
         \case
           RecordLit fields ->
             do
-              url <- FilePath.fromText <$> (Map.lookup "url" fields >>= asText)
+              url <- Data.Text.Lazy.unpack <$> (Map.lookup "url" fields >>= asText)
               pure Pass {..}
           _ -> Nothing
 
@@ -98,8 +97,8 @@ vcsh =
         \case
           RecordLit fields ->
             do
-              name <- FilePath.fromText <$> (Map.lookup "name" fields >>= asText)
-              url <- FilePath.fromText <$> (Map.lookup "url" fields >>= asText)
+              name <- Data.Text.Lazy.unpack <$> (Map.lookup "name" fields >>= asText)
+              url <- Data.Text.Lazy.unpack <$> (Map.lookup "url" fields >>= asText)
               pure Vcsh {..}
           _ -> Nothing
 
@@ -179,7 +178,7 @@ builtins =
 readConfig :: IO Config
 readConfig =
   do
-    configExists <- testfile configFile
+    configExists <- doesFileExist configFile
     if configExists
       then readConfig1
       else pure Vector.empty
@@ -189,12 +188,12 @@ readConfig =
 
     parse =
       do
-        txt <- Data.Text.Lazy.fromStrict <$> readTextFile configFile
-        configFile' <- realpath configFile
+        txt <- Data.Text.Lazy.readFile configFile
+        configFile' <- makeAbsolute configFile
         let
           fileNameForHuman =
-              (Data.Text.Encoding.encodeUtf8 . either id id)
-              (FilePath.toText configFile')
+              Data.Text.Encoding.encodeUtf8
+              (Data.Text.pack configFile')
           delta = Directed fileNameForHuman 0 0 0 0
         case Dhall.Parser.exprFromText delta txt of
           Left exn -> Dhall.detailed (Control.Exception.throwIO exn)

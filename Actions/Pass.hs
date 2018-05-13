@@ -2,44 +2,69 @@
 
 module Actions.Pass where
 
-import Prelude hiding (FilePath)
-import Turtle
+import Control.Concurrent.Async (Async)
+import Data.ByteString (ByteString)
+import Pipes.Concurrent (Input)
+import System.Exit (ExitCode)
 
-import Actions.Git (gitClone)
+import Actions.Action
+import Actions.Command
+import qualified Actions.Git as Git
 import Actions.Helpers
-import Actions.Types
+import qualified Process
 
-pull :: MonadIO io => io ExitCode
-pull = proc_ "pass" ["git", "pull"] empty
+withPass
+  :: [String]  -- ^ arguments
+  -> (Input ByteString -> Action a)  -- ^ worker
+  -> (Command -> Input ByteString -> Async ExitCode -> Maybe a -> Action a)
+  -> Action a
+withPass args worker recovery =
+  ReaderT $ \ctx -> MaybeT $ do
+    Process.withProcess "git" args Nothing
+      (\out -> runAction ctx $ worker out)
+      (\err aex res -> runAction ctx $ recovery cmd err aex res)
+  where
+    cmd =
+      Command
+      { name = "git"
+      , arguments = args
+      , working = Nothing
+      }
 
-push :: MonadIO io => io ExitCode
-push = proc_ "pass" ["git", "push", "--porcelain"] empty
+pull :: Action ()
+pull =
+  withPass ["git", "pull"] dropOutput
+  (unrecoverable "pass: could not pull in remote changes")
 
-sync1 :: FilePath -> Targets -> IO ()
+push :: Action ()
+push =
+  withPass ["git", "push", "--porcelain"] dropOutput
+  (unrecoverable "pass: could not push local changes")
+
+sync1 :: FilePath -> [FilePath] -> Action ()
 sync1 _ targets
 
-  | elem ".password-store" targets || null targets =
-      runManaged $ do
-        home >>= pushd
-        skipIfMissing path $ do
-          announce path Nothing
-          pushd path
-          _ <-  pull .&&. push
-          pure ()
+  | elem path targets || null targets =
+      do
+        skipIfMissing path
+        pull
+        push
 
   | otherwise = pure ()
 
-  where path = ".password-store"
+  where
+    path = ".password-store"
 
-clone :: MonadIO io => FilePath -> io ExitCode
-clone url = gitClone ".password-store" url
+clone :: FilePath -> Action ()
+clone url = Git.clone ".password-store" url
 
-clone1 :: FilePath -> Targets -> IO ()
+clone1 :: FilePath -> [FilePath] -> Action ()
 clone1 url targets
   | elem path targets =
-    runManaged $ do
-      home >>= pushd
-      skipIfExists path $ void $ clone url
+      do
+        skipIfExists path
+        clone url
+
   | otherwise = pure ()
   where
     path = ".password-store"

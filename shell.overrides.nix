@@ -3,9 +3,10 @@ self: super:
   haskellPackages = super.haskellPackages.override (args: {
     overrides = self: super_:
       let
-        super = (args.overrides or (self: super: super)) self super_;
+        overrides = args.overrides self super_;
+        super = super_ // overrides;
       in
-        super // {
+        overrides // {
           ghcWithPackages = self.ghcWithHoogle;
         };
   });

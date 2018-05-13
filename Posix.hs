@@ -5,24 +5,26 @@ module Posix
   , forkAndWait
   ) where
 
+import Control.Monad.IO.Class
+import Data.Foldable
 import Data.Text (Text)
 import qualified Data.Text as T
-import Filesystem.Path.CurrentOS hiding (empty, null)
-import Prelude hiding (FilePath)
+import System.Directory (setCurrentDirectory)
+import System.Exit (ExitCode(..))
 import System.Posix.Process
 import System.Posix.User
-import Turtle hiding (Text, skip)
 
 getUserEntry :: MonadIO io => io UserEntry
 getUserEntry = liftIO $ getRealUserID >>= getUserEntryForID
 
 getUserShell :: MonadIO io => io FilePath
-getUserShell = (decodeString . userShell) <$> getUserEntry
+getUserShell = userShell <$> getUserEntry
 
-forkAndWait :: MonadIO io => FilePath -> [Text] -> io ExitCode
-forkAndWait cmd args = liftIO $ do
+forkAndWait :: MonadIO io => FilePath -> [Text] -> Maybe FilePath -> io ExitCode
+forkAndWait cmd args cwd = liftIO $ do
   pid <- forkProcess $ do
-    executeFile (encodeString cmd) True (T.unpack <$> args) Nothing
+    forM_ cwd setCurrentDirectory
+    executeFile cmd True (T.unpack <$> args) Nothing
   getProcessStatus True True pid >>= \case
     Nothing -> pure (ExitFailure 1)
     Just st ->

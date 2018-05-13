@@ -3,30 +3,29 @@
 
 module Actions
   ( sync, clone
-  , module Actions.Types
+  , module Actions.Action
   ) where
 
 import Data.Foldable
-import Prelude hiding (FilePath)
 
+import Actions.Action
 import qualified Actions.Git as Git
 import qualified Actions.Pass as Pass
 import qualified Actions.Vcsh as Vcsh
-import Actions.Types
 import Config
 
-sync :: Targets -> Action
-sync targets cfg = for_ cfg (\r -> sync1 r targets)
+sync :: Ctx -> [FilePath] -> IO ()
+sync ctx targets = for_ (config ctx) (\r -> runAction ctx $ sync1 r targets)
 
-sync1 :: Repo -> Targets -> IO ()
+sync1 :: Repo -> [FilePath] -> Action ()
 sync1 (Git {..}) = Git.sync1 name url
 sync1 (Pass {..}) = Pass.sync1 url
 sync1 (Vcsh {..}) = Vcsh.sync1 name url
 
-clone :: Targets -> Action
-clone targets cfg = for_ cfg (\r -> clone1 r targets)
+clone :: Ctx -> [FilePath] -> IO ()
+clone ctx targets = for_ (config ctx) (\r -> runAction ctx $ clone1 r targets)
 
-clone1 :: Repo -> Targets -> IO ()
+clone1 :: Repo -> [FilePath] -> Action ()
 clone1 (Git {..}) = Git.clone1 name url
 clone1 (Pass {..}) = Pass.clone1 url
 clone1 (Vcsh {..}) = Vcsh.clone1 name url

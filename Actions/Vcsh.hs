@@ -2,64 +2,84 @@
 
 module Actions.Vcsh where
 
-import Data.Foldable (traverse_)
-import Prelude hiding (FilePath)
-import Turtle
+import Control.Applicative
+import Control.Concurrent.Async (Async)
+import Data.ByteString (ByteString)
+import Formatting
+import Pipes.Concurrent (Input)
+import System.Exit (ExitCode)
+import System.FilePath
 
-import Actions.Helpers hiding (cleanup)
-import Actions.Types
-import Posix (forkAndWait)
+import Actions.Action
+import Actions.Command
+import Actions.Helpers
+import qualified Process
 
-status, pull, push :: MonadIO io => FilePath -> io ExitCode
-status name = vcshStatus name .||. cleanup name "Please commit your changes"
-pull name = vcshPull name .||. cleanup name "Please pull remote changes"
-push name = vcshPush name .||. cleanup name "Please push local changes"
+withVcsh
+  :: [String]  -- ^ arguments
+  -> (Input ByteString -> Action a)  -- ^ worker
+  -> (Command -> Input ByteString -> Async ExitCode -> Maybe a -> Action a)
+  -> Action a
+withVcsh args worker recovery =
+  ReaderT $ \ctx -> MaybeT $ do
+    Process.withProcess "git" args Nothing
+      (\out -> runAction ctx $ worker out)
+      (\err aex res -> runAction ctx $ recovery cmd err aex res)
+  where
+    cmd =
+      Command
+      { name = "git"
+      , arguments = args
+      , working = Nothing
+      }
 
-vcshStatus :: MonadIO io => FilePath -> io ExitCode
-vcshStatus name = do
-  n <- fold (inproc "vcsh" [filePathArg name, "status", "--porcelain"] empty) countLines
-  pure (if (n :: Int) > 0 then ExitFailure n else ExitSuccess)
+status :: FilePath -> Action ()
+status target =
+  withVcsh [target, "status", "--porcelain"] worker
+  (unrecoverable "Unrecorded changes")
+  where
+    worker out = countLines out >>= \n -> if n > 0 then empty else return ()
 
-vcshPull :: MonadIO io => FilePath -> io ExitCode
-vcshPull name = proc_ "vcsh" [filePathArg name, "pull"] empty
+pull :: FilePath -> Action ()
+pull target =
+  withVcsh [target, "pull"] dropOutput
+  (unrecoverable "Could not pull remote changes")
 
-vcshPush :: MonadIO io => FilePath -> io ExitCode
-vcshPush name = proc_ "vcsh" [filePathArg name, "push", "--porcelain"] empty
+push :: FilePath -> Action ()
+push target =
+  withVcsh [target, "push", "--porcelain"] dropOutput
+  (unrecoverable "Could not push local changes")
 
-sync1 :: FilePath -> FilePath -> Targets -> IO ()
-sync1 name _ targets
+sync1 :: FilePath -> FilePath -> [FilePath] -> Action ()
+sync1 target _ targets
 
-  | elem (".vcsh" </> name) targets || null targets =
-      runManaged $ do
-        home >>= pushd
-        skipIfMissing path $ do
-          announce (".vcsh" </> name) Nothing
-          _ <-  status name .&&. pull name .&&. push name
-          pure ()
+  | elem (".vcsh" </> target) targets || null targets =
+      do
+        skipIfMissing path
+        status target
+        pull target
+        push target
 
   | otherwise = pure ()
 
   where
-    path = ".config/vcsh/repo.d" </> name <.> "git"
+    path = ".config/vcsh/repo.d" </> target <.> "git"
 
-clone :: MonadIO io => FilePath -> FilePath -> io ExitCode
-clone name url =
-  proc_ "vcsh" ["clone", filePathArg url, filePathArg name] empty
+clone :: FilePath -> FilePath -> Action ()
+clone target url =
+  withVcsh ["clone", url, target] dropOutput (unrecoverable suggest)
+  where
+    suggest = sformat ("vcsh: failed to clone `"%string%"'") url
 
-clone1 :: FilePath -> FilePath -> Targets -> IO ()
-clone1 name url targets
+clone1 :: FilePath -> FilePath -> [FilePath] -> Action ()
+clone1 target url targets
 
   | elem path targets =
-    runManaged $ do
-      home >>= pushd
-      skipIfExists path $ void $ clone name url
+      do
+        skipIfExists path
+        clone target url
 
   | otherwise = pure ()
 
   where
-    path = ".config/vcsh/repo.d" </> name <.> "git"
-
-cleanup :: MonadIO io => FilePath -> Text -> io ExitCode
-cleanup name reason = do
-  traverse_ echo (textToLines (format ("# "%s) reason))
-  forkAndWait "vcsh" [filePathArg name]
+    path = ".config/vcsh/repo.d" </> target <.> "git"
