@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 48256c5d5c5cd92bec4643c7f028e650967ecb9ea3652a055baf2f0ca89673e7
+-- hash: 5cc0dd5af06da13366772da7fef04caa58a860b07f459a3cc9bee0a8ae6040da
 
 name:           repos
-version:        0.0.0
+version:        0.3
 build-type:     Simple
 cabal-version:  >= 1.10
 
