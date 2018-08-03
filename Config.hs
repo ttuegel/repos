@@ -12,7 +12,7 @@ import qualified Control.Exception
 import qualified Data.ByteString.Lazy
 import qualified Data.HashMap.Strict.InsOrd as Map
 import qualified Data.Text.Encoding
-import qualified Data.Text.Lazy
+import qualified Data.Text
 import qualified Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy.Builder
 import Data.Vector (Vector)
@@ -189,46 +189,20 @@ readConfig =
 
     parse =
       do
-        txt <- Data.Text.Lazy.fromStrict <$> readTextFile configFile
+        txt <- readTextFile configFile
         configFile' <- realpath configFile
         let
           fileNameForHuman =
-              (Data.Text.Encoding.encodeUtf8 . either id id)
+              (Data.Text.unpack . either id id)
               (FilePath.toText configFile')
-          delta = Directed fileNameForHuman 0 0 0 0
-        case Dhall.Parser.exprFromText delta txt of
+        case Dhall.Parser.exprFromText fileNameForHuman txt of
           Left exn -> Dhall.detailed (Control.Exception.throwIO exn)
           Right parsed -> pure parsed
-
-    typeCheck loaded =
-        let
-          -- Text of the expected type annotation
-          expectedBytes =
-              ( Data.ByteString.Lazy.toStrict
-              . Data.Text.Lazy.Encoding.encodeUtf8
-              . Data.Text.Lazy.Builder.toLazyText
-              . build
-              ) expected
-          -- Attach the expected type annotation to the loaded expression.
-          annot =
-            case loaded of
-              Note (Src begin end bytes) _ ->
-                  Note (Src begin end bytes') (Annot loaded expected)
-                where
-                  bytes' = bytes <> " : " <> expectedBytes
-
-              _ -> Annot loaded expected
-        in
-          case Dhall.TypeCheck.typeWith typeOfBuiltins annot of
-            Left exn -> Dhall.detailed (Control.Exception.throwIO exn)
-            Right _ -> pure ()
 
     readConfig1 =
       do
         parsed <- parse
-        loaded <- Dhall.Import.load parsed
-        typeCheck loaded
-        let normalized = Dhall.Core.normalizeWith builtins loaded
+        normalized <- Dhall.Import.loadWithContext typeOfBuiltins builtins parsed
         case extract normalized of
           Just config -> pure config
           Nothing ->

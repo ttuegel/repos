@@ -12,7 +12,7 @@ mkDerivation {
   executableHaskellDepends = [
     base bytestring containers dhall formatting
     insert-ordered-containers optparse-applicative system-filepath text
-    text-format trifecta turtle unix vector
+    trifecta turtle unix vector
   ];
   license = stdenv.lib.licenses.unfree;
   hydraPlatforms = stdenv.lib.platforms.none;
