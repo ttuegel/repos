@@ -59,7 +59,7 @@ let
     in
       drv: overrideSrc drv (src: builtins.filterSource predicate src);
 
-  drv = filterSrc (haskellPackages.callPackage ./repos.nix {});
+  drv = filterSrc (haskellPackages.callPackage ./package.nix {});
 
 in
 
