@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "repos";
-  version = "0.3";
+  version = "0.3.1";
   src = ./.;
   isLibrary = false;
   isExecutable = true;
