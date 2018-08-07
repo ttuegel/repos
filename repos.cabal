@@ -1,11 +1,11 @@
--- This file has been generated from package.yaml by hpack version 0.27.0.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f8b8542e990dd9cc4a6d01b329b5b2cc15a7758182ce88ee3000456fc84b8974
+-- hash: 4b3e897fe8084641516377baa364f28d2ad25976e67882ff95cf2136485eaba6
 
 name:           repos
-version:        0.3
+version:        0.3.1
 build-type:     Simple
 cabal-version:  >= 1.10
 
