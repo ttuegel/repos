@@ -1,11 +1,10 @@
 { mkDerivation, base, bytestring, containers, dhall, formatting
 , insert-ordered-containers, optparse-applicative, stdenv
-, system-filepath, text, text-format, trifecta, turtle, unix
-, vector
+, system-filepath, text, trifecta, turtle, unix, vector
 }:
 mkDerivation {
   pname = "repos";
-  version = "0.0.0";
+  version = "0.3";
   src = ./.;
   isLibrary = false;
   isExecutable = true;
