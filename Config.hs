@@ -39,6 +39,7 @@ import Turtle hiding (Parser, bytes)
 data Repo = Git { name :: FilePath, url :: FilePath }
           | Pass { url :: FilePath }
           | Vcsh { name :: FilePath, url :: FilePath }
+  deriving (Eq, Show)
 
 
 asText :: Expr Src X -> Maybe Text
@@ -176,15 +177,18 @@ builtins =
         ]
 
 
-readConfig :: IO Config
-readConfig =
+readDefaultConfig :: IO Config
+readDefaultConfig = readConfig "./.repos.dhall"
+
+
+readConfig :: FilePath -> IO Config
+readConfig configFile =
   do
     configExists <- testfile configFile
     if configExists
       then readConfig1
       else pure Vector.empty
   where
-    configFile = "./.repos.dhall"
     (Type { expected, extract }) = Dhall.vector repo
 
     parse =
@@ -202,7 +206,16 @@ readConfig =
     readConfig1 =
       do
         parsed <- parse
-        normalized <- Dhall.Import.loadWithContext typeOfBuiltins builtins parsed
+        loaded <- Dhall.Import.loadWithContext typeOfBuiltins builtins parsed
+        typed <-
+          case Dhall.TypeCheck.typeWith typeOfBuiltins loaded of
+            Left err ->
+              Dhall.detailed (Control.Exception.throwIO err)
+            Right _ ->
+              pure loaded
+        let
+          normalized :: Expr Src X
+          normalized = Dhall.Core.normalizeWith builtins typed
         case extract normalized of
           Just config -> pure config
           Nothing ->

@@ -6,7 +6,7 @@ import Filesystem.Path.CurrentOS
 import Options.Applicative
 
 import Actions
-import Config (readConfig)
+import Config (readDefaultConfig)
 
 actions :: ParserInfo Action
 actions = info
@@ -25,5 +25,5 @@ actions = info
 main :: IO ()
 main = do
   act <- execParser actions
-  cfg <- readConfig
+  cfg <- readDefaultConfig
   act cfg
