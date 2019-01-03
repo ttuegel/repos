@@ -1,11 +1,10 @@
-*** found package.yaml. Using hpack...
 { mkDerivation, base, bytestring, containers, dhall, formatting
 , hpack, insert-ordered-containers, optparse-applicative, stdenv
 , system-filepath, text, trifecta, turtle, unix, vector
 }:
 mkDerivation {
   pname = "repos";
-  version = "0.3.4";
+  version = "0.3.5";
   src = ./.;
   isLibrary = false;
   isExecutable = true;
