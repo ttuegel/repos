@@ -42,7 +42,7 @@ let
 
   blacklistDirs = [ ".git" "dist" "dist-newstyle" ];
   whitelistExts = [ ".cabal" ".hs" ];
-  whitelistNames = [ "LICENSE" ];
+  whitelistNames = [ "LICENSE" "package.yaml" ];
 
   filterSrc =
     let
