@@ -25,7 +25,7 @@ gitPull :: MonadIO io => io ExitCode
 gitPull =
   proc_ "git" ["pull", "--no-gpg-sign"] empty
   .&&.
-  proc_ "git" ["submodule", "update", "--init"] empty
+  proc_ "git" ["submodule", "update"] empty
 
 gitPush :: MonadIO io => io ExitCode
 gitPush = proc_ "git" ["push", "--porcelain"] empty
